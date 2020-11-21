@@ -13,19 +13,17 @@ Website: http://zetcode.com
  */
 public class Tetris extends JFrame {
 
-    private JLabel statusbar;
+    JLabel statuszeile;
 
-    public Tetris() {
-
+    Tetris() {
         initUI();
     }
 
-    private void initUI() {
+    void initUI() {
+        statuszeile = new JLabel(" 0");
+        add(statuszeile, BorderLayout.SOUTH);
 
-        statusbar = new JLabel(" 0");
-        add(statusbar, BorderLayout.SOUTH);
-
-        var board = new Board(this);
+        var board = new Brett(this);
         add(board);
         board.start();
 
@@ -35,17 +33,9 @@ public class Tetris extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    JLabel getStatusBar() {
-
-        return statusbar;
-    }
-
     public static void main(String[] args) {
-
         EventQueue.invokeLater(() -> {
-
-            var game = new Tetris();
-            game.setVisible(true);
+            new Tetris().setVisible(true);
         });
     }
 }
