@@ -13,29 +13,18 @@ import java.awt.event.KeyEvent;
 public class Brett extends JPanel {
 
     static final int BRETT_BREITE = 10;
-    static final int BRETT_HOEHE = 22;
-    static final int INTERVALL = 300;
+    static final int BRETT_HOEHE  = 22;
+    static final int INTERVALL    = 300;
 
-    static final Color[] COLORS = new Color[]{
-            new Color(0, 0, 0),
-            new Color(204, 102, 102),
-            new Color(102, 204, 102),
-            new Color(102, 102, 204),
-            new Color(204, 204, 102),
-            new Color(204, 102, 204),
-            new Color(102, 204, 204),
-            new Color(218, 170, 0)
-    };
-
-    Timer        timer;
-    boolean      untenAngekommen    = false;
-    boolean      istPausiert        = false;
-    int          anzEntfernteZeilen = 0;
-    int          aktuellesX         = 0;
-    int          aktuellesY         = 0;
-    JLabel       statuszeile;
-    Figur        aktuellesTeil;
-    TetrisForm[] brett;
+    Timer          timer;
+    boolean        untenAngekommen    = false;
+    boolean        istPausiert        = false;
+    int            anzEntfernteZeilen = 0;
+    int            aktuellesX         = 0;
+    int            aktuellesY         = 0;
+    JLabel         statuszeile;
+    Figur          aktuellesTeil;
+    TetrisForm[][] brett;
 
     Brett(Tetris parent) {
         initBoard(parent);
@@ -56,12 +45,12 @@ public class Brett extends JPanel {
     }
 
     TetrisForm figurBei(int x, int y) {
-        return brett[(y * BRETT_BREITE) + x];
+        return brett[y][x];
     }
 
     void start() {
         aktuellesTeil = new Figur();
-        brett = new TetrisForm[BRETT_BREITE * BRETT_HOEHE];
+        brett = new TetrisForm[BRETT_HOEHE][BRETT_BREITE];
 
         brettLoeschen();
         neuesTeil();
@@ -103,14 +92,14 @@ public class Brett extends JPanel {
             }
         }
 
-        if (aktuellesTeil.teil != TetrisForm.Keine) {
+        if (aktuellesTeil.form != TetrisForm.Keine) {
             for (int i = 0; i < 4; i++) {
                 int x = aktuellesX + aktuellesTeil.x(i);
                 int y = aktuellesY - aktuellesTeil.y(i);
 
                 zeichneQuadrat(g, x * quadratBreite(),
                         brettOben + (BRETT_HOEHE - y - 1) * quadratHoehe(),
-                        aktuellesTeil.teil);
+                        aktuellesTeil.form);
             }
         }
     }
@@ -136,8 +125,10 @@ public class Brett extends JPanel {
     }
 
     void brettLoeschen() {
-        for (int i = 0; i < BRETT_HOEHE * BRETT_BREITE; i++) {
-            brett[i] = TetrisForm.Keine;
+        for (int y = 0; y < BRETT_HOEHE; y++) {
+            for (int x = 0; x < BRETT_BREITE; x++) {
+                brett[y][x] = TetrisForm.Keine;
+            }
         }
     }
 
@@ -145,7 +136,7 @@ public class Brett extends JPanel {
         for (int i = 0; i < 4; i++) {
             int x = aktuellesX + aktuellesTeil.x(i);
             int y = aktuellesY - aktuellesTeil.y(i);
-            brett[(y * BRETT_BREITE) + x] = aktuellesTeil.teil;
+            brett[y][x] = aktuellesTeil.form;
         }
 
         volleZeilenLoeschen();
@@ -156,12 +147,12 @@ public class Brett extends JPanel {
     }
 
     void neuesTeil() {
-        aktuellesTeil.setzeZufaelligeForm();
-        aktuellesX = BRETT_BREITE / 2 + 1;
+        aktuellesTeil = new Figur();
+        aktuellesX = BRETT_BREITE / 2;
         aktuellesY = BRETT_HOEHE - 1 + aktuellesTeil.minY();
 
         if (!versucheBewegung(aktuellesTeil, aktuellesX, aktuellesY)) {
-            aktuellesTeil.setzeForm(TetrisForm.Keine);
+            aktuellesTeil = new Figur(TetrisForm.Keine);
             timer.stop();
 
             statuszeile.setText(String.format("Game over. Score: %d", anzEntfernteZeilen));
@@ -207,9 +198,9 @@ public class Brett extends JPanel {
             if (zeileIstVoll) {
                 anzVolleZeilen++;
 
-                for (int k = i; k < BRETT_HOEHE - 1; k++) {
-                    for (int j = 0; j < BRETT_BREITE; j++) {
-                        brett[(k * BRETT_BREITE) + j] = figurBei(j, k + 1);
+                for (int y = i; y < BRETT_HOEHE - 1; y++) {
+                    for (int x = 0; x < BRETT_BREITE; x++) {
+                        brett[y][x] = figurBei(x, y + 1);
                     }
                 }
             }
@@ -220,13 +211,12 @@ public class Brett extends JPanel {
 
             statuszeile.setText(String.valueOf(anzEntfernteZeilen));
             untenAngekommen = true;
-            aktuellesTeil.setzeForm(TetrisForm.Keine);
         }
     }
 
-    void zeichneQuadrat(Graphics g, int x, int y, TetrisForm shape) {
+    void zeichneQuadrat(Graphics g, int x, int y, TetrisForm form) {
 
-        var color = COLORS[shape.ordinal()];
+        var color = form.farbe;
 
         g.setColor(color);
         g.fillRect(x + 1, y + 1, quadratBreite() - 2, quadratHoehe() - 2);
@@ -265,7 +255,7 @@ public class Brett extends JPanel {
 
         @Override
         public void keyPressed(KeyEvent e) {
-            if (aktuellesTeil.teil == TetrisForm.Keine) {
+            if (aktuellesTeil.form == TetrisForm.Keine) {
                 return;
             }
 
@@ -273,8 +263,8 @@ public class Brett extends JPanel {
                 case KeyEvent.VK_P     -> pause();
                 case KeyEvent.VK_LEFT  -> versucheBewegung(aktuellesTeil, aktuellesX - 1, aktuellesY);
                 case KeyEvent.VK_RIGHT -> versucheBewegung(aktuellesTeil, aktuellesX + 1, aktuellesY);
-                case KeyEvent.VK_SPACE -> versucheBewegung(aktuellesTeil.dreheRechts(), aktuellesX, aktuellesY);
-                case KeyEvent.VK_UP    -> versucheBewegung(aktuellesTeil.dreheLinks(), aktuellesX, aktuellesY);
+                case KeyEvent.VK_SPACE -> versucheBewegung(aktuellesTeil.copy().dreheRechts(), aktuellesX, aktuellesY);
+                case KeyEvent.VK_UP    -> versucheBewegung(aktuellesTeil.copy().dreheLinks(), aktuellesX, aktuellesY);
                 case KeyEvent.VK_DOWN  -> fallenlassen();
                 case KeyEvent.VK_D     -> eineZeileRunter();
             }

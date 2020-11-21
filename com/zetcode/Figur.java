@@ -1,60 +1,49 @@
 package com.zetcode;
 
+import java.awt.Color;
 import java.util.Random;
 
 public class Figur {
 
-    Random zufallszahl = new Random();
+    static Random zufallszahl = new Random();
 
     enum TetrisForm {
-        Keine,
-        Z,
-        S,
-        Linie,
-        T,
-        Quadrat,
-        L,
-        LVerkehrt
+        Keine    (new int[][]{ { 0, 0 },   { 0, 0 },   { 0, 0 },   { 0, 0 }  }, new Color(0, 0, 0)       ),
+        Z        (new int[][]{ { 0, -1 },  { 0, 0 },   { -1, 0 },  { -1, 1 } }, new Color(204, 102, 102) ),
+        S        (new int[][]{ { 0, -1 },  { 0, 0 },   { 1, 0 },   { 1, 1 }  }, new Color(102, 204, 102) ),
+        Linie    (new int[][]{ { 0, -1 },  { 0, 0 },   { 0, 1 },   { 0, 2 }  }, new Color(102, 102, 204) ),
+        T        (new int[][]{ { -1, 0 },  { 0, 0 },   { 1, 0 },   { 0, 1 }  }, new Color(204, 204, 102) ),
+        Quadrat  (new int[][]{ { 0, 0 },   { 1, 0 },   { 0, 1 },   { 1, 1 }  }, new Color(204, 102, 204) ),
+        L        (new int[][]{ { -1, -1 }, { 0, -1 },  { 0, 0 },   { 0, 1 }  }, new Color(102, 204, 204) ),
+        LVerkehrt(new int[][]{ { 1, -1 },  { 0, -1 },  { 0, 0 },   { 0, 1 }  }, new Color(218, 170, 0)   );
+
+        final int[][] koords;
+        final Color   farbe;
+
+        TetrisForm(int[][] koords, Color farbe) {
+            this.koords = koords;
+            this.farbe = farbe;
+        }
     }
 
-    TetrisForm teil;
-    int        koordinaten[][];
-    int[][][]  koordTabelle;
+    final TetrisForm form;
+    final int[][]    koordinaten = new int[4][2];
 
 
     Figur() {
-        koordinaten = new int[4][2];
-
-        koordTabelle = new int[][][] {
-                { { 0, 0 },   { 0, 0 },   { 0, 0 },   { 0, 0 } },
-                { { 0, -1 },  { 0, 0 },   { -1, 0 },  { -1, 1 } },
-                { { 0, -1 },  { 0, 0 },   { 1, 0 },   { 1, 1 } },
-                { { 0, -1 },  { 0, 0 },   { 0, 1 },   { 0, 2 } },
-                { { -1, 0 },  { 0, 0 },   { 1, 0 },   { 0, 1 } },
-                { { 0, 0 },   { 1, 0 },   { 0, 1 },   { 1, 1 } },
-                { { -1, -1 }, { 0, -1 },  { 0, 0 },   { 0, 1 } },
-                { { 1, -1 },  { 0, -1 },  { 0, 0 },   { 0, 1 } }
-        };
-
-        setzeForm(TetrisForm.Keine);
+        this(TetrisForm.values()[Math.abs(zufallszahl.nextInt()) % 7 + 1]);
     }
 
-    void setzeForm(TetrisForm form) {
+    Figur(TetrisForm form) {
+        this(form, form.koords);
+    }
+
+    Figur(TetrisForm form, int[][] koords) {
+        this.form = form;
         for (int i = 0; i < 4 ; i++) {
-            for (int j = 0; j < 2; ++j) {
-                koordinaten[i][j] = koordTabelle[form.ordinal()][i][j];
-            }
+            koordinaten[i][0] = koords[i][0];
+            koordinaten[i][1] = koords[i][1];
         }
-
-        teil = form;
-    }
-
-    void setX(int index, int x) {
-        koordinaten[index][0] = x;
-    }
-
-    void setY(int index, int y) {
-        koordinaten[index][1] = y;
     }
 
     int x(int index) {
@@ -64,24 +53,6 @@ public class Figur {
     int y(int index) {
         return koordinaten[index][1];
     }
-
-    void setzeZufaelligeForm() {
-        int x = Math.abs(zufallszahl.nextInt()) % 7 + 1;
-
-        setzeForm(TetrisForm.values()[x]);
-    }
-
-    int minX() {
-        int m = koordinaten[0][0];
-
-        for (int i=0; i < 4; i++) {
-
-            m = Math.min(m, koordinaten[i][0]);
-        }
-
-        return m;
-    }
-
 
     int minY() {
         int m = koordinaten[0][1];
@@ -94,38 +65,39 @@ public class Figur {
         return m;
     }
 
-    Figur dreheLinks() {
-        if (teil == TetrisForm.Quadrat) {
+    public Figur copy() {
+        return new Figur(this.form, this.koordinaten);
+    }
 
+
+    Figur dreheLinks() {
+        if (form == TetrisForm.Quadrat) {
             return this;
         }
 
-        var result = new Figur();
-        result.teil = teil;
-
         for (int i = 0; i < 4; ++i) {
-
-            result.setX(i, y(i));
-            result.setY(i, -x(i));
+            int yAlt = y(i);
+            int xAlt = x(i);
+            koordinaten[i][0] = yAlt;
+            koordinaten[i][1] = -xAlt;
         }
 
-        return result;
+        return this;
     }
 
     Figur dreheRechts() {
-        if (teil == TetrisForm.Quadrat) {
+        if (form == TetrisForm.Quadrat) {
             return this;
         }
 
-        var resultat = new Figur();
-        resultat.teil = teil;
-
         for (int i = 0; i < 4; ++i) {
-            resultat.setX(i, -y(i));
-            resultat.setY(i, x(i));
+            int yAlt = y(i);
+            int xAlt = x(i);
+            koordinaten[i][0] = -yAlt;
+            koordinaten[i][1] = xAlt;
         }
 
-        return resultat;
+        return this;
     }
 }
 
