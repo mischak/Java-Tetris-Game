@@ -8,7 +8,7 @@ public class Figur {
     static Random zufallszahl = new Random();
 
     enum TetrisForm {
-        Keine    (new int[][]{ { 0, 0 },   { 0, 0 },   { 0, 0 },   { 0, 0 }  }, new Color(0, 0, 0)       ),
+        Keine    (new int[][]{ { 0, 0 },   { 0, 0 },   { 0, 0 },   { 0, 0 }  }, new Color(240, 240, 240) ),
         Z        (new int[][]{ { 0, -1 },  { 0, 0 },   { -1, 0 },  { -1, 1 } }, new Color(204, 102, 102) ),
         S        (new int[][]{ { 0, -1 },  { 0, 0 },   { 1, 0 },   { 1, 1 }  }, new Color(102, 204, 102) ),
         Linie    (new int[][]{ { 0, -1 },  { 0, 0 },   { 0, 1 },   { 0, 2 }  }, new Color(102, 102, 204) ),

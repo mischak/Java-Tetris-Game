@@ -2,15 +2,15 @@ package com.zetcode;
 
 import com.zetcode.Figur.TetrisForm;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.Timer;
-import java.awt.Color;
+import javax.swing.*;
 import java.awt.Graphics;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Arrays;
 
-public class Brett extends JPanel {
+public class Brett extends Feld {
 
     static final int BRETT_BREITE = 10;
     static final int BRETT_HOEHE  = 22;
@@ -22,26 +22,30 @@ public class Brett extends JPanel {
     int            anzEntfernteZeilen = 0;
     int            aktuellesX         = 0;
     int            aktuellesY         = 0;
-    JLabel         statuszeile;
-    Figur          aktuellesTeil;
-    TetrisForm[][] brett;
 
-    Brett(Tetris parent) {
-        initBoard(parent);
-    }
+    final Feld           halten;
+    final Feld           naechstes;
+    final JLabel         statuszeile;
+    final TetrisForm[][] brett = new TetrisForm[BRETT_HOEHE][BRETT_BREITE];
 
-    void initBoard(Tetris parent) {
+    public Brett(JLabel statuszeile, Feld halten, Feld naechstes) {
+        this.halten = halten;
+        this.naechstes = naechstes;
+        this.statuszeile = statuszeile;
+
         setFocusable(true);
-        statuszeile = parent.statuszeile;
+
         addKeyListener(new TAdapter());
-    }
 
-    int quadratBreite() {
-        return (int) getSize().getWidth() / BRETT_BREITE;
-    }
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                quadratBreite = (int) getSize().getWidth() / BRETT_BREITE;
+                quadratHoehe  = (int) getSize().getHeight() / BRETT_HOEHE;
+                paddingOben = (int) getSize().getHeight() - BRETT_HOEHE * quadratHoehe;
 
-    int quadratHoehe() {
-        return (int) getSize().getHeight() / BRETT_HOEHE;
+            }
+        });
     }
 
     TetrisForm figurBei(int x, int y) {
@@ -50,9 +54,11 @@ public class Brett extends JPanel {
 
     void start() {
         aktuellesTeil = new Figur();
-        brett = new TetrisForm[BRETT_HOEHE][BRETT_BREITE];
+        quadratBreite = (int) getSize().getWidth() / BRETT_BREITE;
+        quadratHoehe  = (int) getSize().getHeight() / BRETT_HOEHE;
+        paddingOben   = (int) getSize().getHeight() - BRETT_HOEHE * quadratHoehe;
 
-        brettLoeschen();
+        feldLoeschen(brett);
         neuesTeil();
 
         timer = new Timer(INTERVALL, e -> spielZyklus());
@@ -71,37 +77,19 @@ public class Brett extends JPanel {
         repaint();
     }
 
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        zeichne(g);
-    }
-
     void zeichne(Graphics g) {
-        var groesse = getSize();
-        int brettOben = (int) groesse.getHeight() - BRETT_HOEHE * quadratHoehe();
-
         for (int i = 0; i < BRETT_HOEHE; i++) {
             for (int j = 0; j < BRETT_BREITE; j++) {
                 TetrisForm form = figurBei(j, BRETT_HOEHE - i - 1);
 
                 if (form != TetrisForm.Keine) {
-                    zeichneQuadrat(g, j * quadratBreite(),
-                            brettOben + i * quadratHoehe(), form);
+                    zeichneQuadrat(g, j * quadratBreite,
+                            paddingOben + i * quadratHoehe, form);
                 }
             }
         }
 
-        if (aktuellesTeil.form != TetrisForm.Keine) {
-            for (int i = 0; i < 4; i++) {
-                int x = aktuellesX + aktuellesTeil.x(i);
-                int y = aktuellesY - aktuellesTeil.y(i);
-
-                zeichneQuadrat(g, x * quadratBreite(),
-                        brettOben + (BRETT_HOEHE - y - 1) * quadratHoehe(),
-                        aktuellesTeil.form);
-            }
-        }
+        zeichneTeil(g, this.aktuellesX, BRETT_HOEHE - this.aktuellesY - 1);
     }
 
     void fallenlassen() {
@@ -124,11 +112,9 @@ public class Brett extends JPanel {
         }
     }
 
-    void brettLoeschen() {
-        for (int y = 0; y < BRETT_HOEHE; y++) {
-            for (int x = 0; x < BRETT_BREITE; x++) {
-                brett[y][x] = TetrisForm.Keine;
-            }
+    void feldLoeschen(TetrisForm[][] feld) {
+        for (TetrisForm[] tetrisForms : feld) {
+            Arrays.fill(tetrisForms, TetrisForm.Keine);
         }
     }
 
@@ -212,24 +198,6 @@ public class Brett extends JPanel {
             statuszeile.setText(String.valueOf(anzEntfernteZeilen));
             untenAngekommen = true;
         }
-    }
-
-    void zeichneQuadrat(Graphics g, int x, int y, TetrisForm form) {
-
-        var color = form.farbe;
-
-        g.setColor(color);
-        g.fillRect(x + 1, y + 1, quadratBreite() - 2, quadratHoehe() - 2);
-
-        g.setColor(color.brighter());
-        g.drawLine(x, y + quadratHoehe() - 1, x, y);
-        g.drawLine(x, y, x + quadratBreite() - 1, y);
-
-        g.setColor(color.darker());
-        g.drawLine(x + 1, y + quadratHoehe() - 1,
-                x + quadratBreite() - 1, y + quadratHoehe() - 1);
-        g.drawLine(x + quadratBreite() - 1, y + quadratHoehe() - 1,
-                x + quadratBreite() - 1, y + 1);
     }
 
 
